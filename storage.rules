@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to verify user owns the storage path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'Admin';
+    }
+
+    // User profile pictures: Anyone can read if profile is shared, but only owner can write
+    match /users/{userId}/profile_pic.jpg {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // User study vault documents (PDFs, TXT, DOCX): Isolated and private to the user
+    match /users/{userId}/vault/{allPaths=**} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#6750A4" />
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#FDE047" stop-opacity="1" />
+      <stop offset="50%" stop-color="#EAB308" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#6750A4" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background Circle with Gradient -->
+  <rect width="512" height="512" rx="128" fill="url(#purpleGrad)" />
+
+  <!-- Soft glow behind the magic lamp -->
+  <circle cx="256" cy="240" r="160" fill="url(#lampGlow)" />
+
+  <!-- Glowing AI Sparkles -->
+  <path d="M256 100 L261 115 L276 120 L261 125 L256 140 L251 125 L236 120 L251 115 Z" fill="#FFFFFF" />
+  <path d="M360 160 L363 170 L373 173 L363 176 L360 186 L357 176 L347 173 L357 170 Z" fill="#FDE047" />
+  <path d="M150 200 L152 208 L160 210 L152 212 L150 220 L148 212 L140 210 L148 208 Z" fill="#FFFFFF" opacity="0.8" />
+
+  <!-- Magic Genie Lamp Base / Body -->
+  <path d="M 180 340 L 332 340 L 322 360 L 190 360 Z" fill="#FFFFFF" />
+  <path d="M 230 330 L 282 330 L 282 340 L 230 340 Z" fill="#F1F5F9" />
+  
+  <!-- Main Lamp Body -->
+  <path d="M 150 280 C 130 250, 130 220, 160 210 C 180 200, 310 200, 330 230 C 350 260, 340 300, 320 320 C 290 340, 220 340, 190 320 C 170 300, 155 290, 150 280 Z" fill="#FFFFFF" />
+  
+  <!-- Lamp Spout -->
+  <path d="M 150 250 C 120 250, 90 230, 80 210 C 85 205, 95 205, 110 220 C 130 235, 150 240, 160 245 Z" fill="#FFFFFF" />
+  <path d="M 80 210 C 78 200, 85 190, 95 195 C 105 200, 110 215, 110 220 Z" fill="#FDE047" /> <!-- Flame on Spout -->
+
+  <!-- Lamp Handle -->
+  <path d="M 320 250 C 360 230, 390 250, 390 280 C 390 310, 350 330, 320 315 C 330 305, 360 295, 360 280 C 360 265, 335 260, 320 250 Z" fill="#FFFFFF" />
+
+  <!-- Subtle Shading lines -->
+  <path d="M 190 320 C 220 335, 290 335, 320 320" stroke="#E2E8F0" stroke-width="6" fill="none" stroke-linecap="round" />
+  <path d="M 170 270 C 200 285, 300 285, 320 265" stroke="#E2E8F0" stroke-width="4" fill="none" stroke-linecap="round" />
+</svg>

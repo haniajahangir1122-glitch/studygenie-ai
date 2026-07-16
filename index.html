@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StudyGenie AI Companion</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#6750A4">
+  <meta name="description" content="Intelligent Bento-styled AI Study Companion, Flashcard generator, and Quiz master.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="StudyGenie">
+  
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  
+  <style>
+    /* Material 3 Bento Color Palette & Variables */
+    :root {
+      --bento-bg: #FDF8F6;
+      --bento-text-primary: #0F172A;
+      --bento-text-secondary: #475569;
+      --bento-premium-bg: #EADDFF;
+      --bento-premium-text: #21005D;
+      --bento-premium-btn: #6750A4;
+      --bento-streak-bg: #D0BCFF;
+      --bento-streak-text: #21005D;
+      --bento-card-border: #CAC4D0;
+      --bento-card-bg: #F3EDF7;
+      --bento-card-white: #FFFFFF;
+      --bento-vault-bg: #C2E7FF;
+      --bento-vault-text: #001D35;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bento-bg);
+      color: var(--bento-text-primary);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding-bottom: 80px; /* Safe space for floating nav */
+      overflow-x: hidden;
+    }
+
+    /* Core Layout Structure */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 8px 4px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--bento-text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .header-title p {
+      font-size: 12px;
+      color: var(--bento-premium-btn);
+      font-weight: 600;
+    }
+
+    /* Bento Grid */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .bento-card {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+      border-radius: 24px;
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    /* Column Spans for Bento grid */
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-4 { grid-column: span 4; }
+    .col-6 { grid-column: span 6; }
+
+    /* responsive adjustments */
+    @media (max-width: 900px) {
+      .col-8, .col-4, .col-6 {
+        grid-column: span 12;
+      }
+    }
+
+    /* Installation Banner styling */
+    .install-banner {
+      display: none; /* Controlled dynamically */
+      background: linear-gradient(135deg, var(--bento-premium-bg), #D0BCFF);
+      border: 1px solid rgba(103, 80, 164, 0.2);
+      border-radius: 20px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .install-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .install-icon-wrapper {
+      background-color: var(--bento-premium-btn);
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .install-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--bento-premium-text);
+    }
+
+    .install-text p {
+      font-size: 11px;
+      color: var(--bento-premium-text);
+      opacity: 0.8;
+    }
+
+    .install-btn {
+      background-color: var(--bento-premium-btn);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Offline Warning Banner */
+    .offline-indicator {
+      display: none;
+      background-color: var(--bento-text-secondary);
+      color: white;
+      text-align: center;
+      padding: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      width: 100%;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    /* Interactive Profile & Streak Card */
+    .profile-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      background-color: var(--bento-premium-btn);
+      color: white;
+      font-weight: 800;
+      font-size: 24px;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-details h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--bento-text-primary);
+    }
+
+    .profile-details p {
+      font-size: 11px;
+      color: var(--bento-text-secondary);
+    }
+
+    .xp-bar-container {
+      width: 100%;
+    }
+
+    .xp-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--bento-text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .xp-track {
+      background-color: #E6E0E9;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .xp-progress {
+      background-color: var(--bento-premium-btn);
+      height: 100%;
+      width: 48%; /* Mock XP state */
+      transition: width 0.5s ease;
+    }
+
+    /* Streak Tracker Grid */
+    .streak-section {
+      border-top: 1px solid rgba(202, 196, 208, 0.4);
+      padding-top: 16px;
+    }
+
+    .streak-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .streak-days-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .streak-day-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .streak-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #E6E0E9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bento-text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .streak-bubble.claimed {
+      background-color: var(--bento-streak-bg);
+      color: var(--bento-streak-text);
+    }
+
+    .streak-bubble.interactive-active {
+      border: 1.5px dashed var(--bento-premium-btn);
+      animation: pulse 1.5s infinite;
+    }
+
+    .streak-day-label {
+      font-size: 10px;
+      color: var(--bento-text-secondary);
+    }
+
+    /* StudyGenie Chat System */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 360px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .message-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 85%;
+    }
+
+    .message-row.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-row.ai {
+      align-self: flex-start;
+    }
+
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .message-row.ai .msg-avatar {
+      background-color: var(--bento-card-bg);
+      color: var(--bento-premium-btn);
+    }
+
+    .message-row.user .msg-avatar {
+      background-color: var(--bento-premium-btn);
+      color: white;
+    }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .message-row.ai .msg-bubble {
+      background-color: var(--bento-card-bg);
+      color: var(--bento-text-primary);
+      border-radius: 20px 20px 20px 4px;
+      border: 1px solid var(--bento-card-border);
+    }
+
+    .message-row.user .msg-bubble {
+      background-color: var(--bento-premium-btn);
+      color: white;
+      border-radius: 20px 20px 4px 20px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      border: 1px solid var(--bento-card-border);
+      border-radius: 24px;
+      padding: 10px 16px;
+      font-size: 13px;
+      outline: none;
+      background-color: var(--bento-card-white);
+    }
+
+    .chat-input:focus {
+      border-color: var(--bento-premium-btn);
+    }
+
+    .chat-send-btn {
+      background-color: var(--bento-premium-btn);
+      color: white;
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    /* Suggestion Prompts styling */
+    .suggestions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .suggestion-tag {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+      padding: 6px 12px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--bento-text-primary);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .suggestion-tag:hover {
+      background-color: var(--bento-card-bg);
+    }
+
+    .thinking-row {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--bento-text-secondary);
+      padding: 4px;
+    }
+
+    .thinking-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--bento-premium-btn);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+    .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    /* Interactive 3D Flashcards */
+    .flashcard-wrapper {
+      perspective: 1000px;
+      height: 180px;
+      margin-bottom: 12px;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .flashcard-inner.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .flashcard-front {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+    }
+
+    .flashcard-back {
+      background-color: var(--bento-premium-bg);
+      color: var(--bento-premium-text);
+      border: 1.5px solid var(--bento-premium-btn);
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-indicator {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      color: var(--bento-text-secondary);
+    }
+
+    .flashcard-back .flashcard-indicator {
+      color: var(--bento-premium-btn);
+    }
+
+    .flashcard-text {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .flashcard-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .flashcard-btn {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+      border-radius: 12px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .flashcard-counter {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bento-text-secondary);
+    }
+
+    /* Active Bento Vault */
+    .vault-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .vault-search-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .vault-search {
+      flex: 1;
+      border: 1px solid var(--bento-card-border);
+      border-radius: 14px;
+      padding: 8px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .upload-btn-trigger {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+      border-radius: 14px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .progress-box {
+      display: none;
+      background-color: var(--bento-premium-bg);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 4px;
+    }
+
+    .progress-title-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--bento-premium-text);
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      background-color: #E6E0E9;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      background-color: var(--bento-premium-btn);
+      height: 100%;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .vault-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .vault-item {
+      background-color: var(--bento-card-bg);
+      padding: 10px 12px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: opacity 0.2s;
+    }
+
+    .vault-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vault-item-icon {
+      color: var(--bento-premium-btn);
+      font-size: 18px;
+    }
+
+    .vault-item-info h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bento-text-primary);
+    }
+
+    .vault-item-info p {
+      font-size: 9px;
+      color: var(--bento-text-secondary);
+    }
+
+    .vault-delete-btn {
+      background: none;
+      border: none;
+      color: #C62828;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+    }
+
+    /* Interactive Quiz overlay inside bento */
+    .quiz-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .quiz-question-box {
+      background-color: var(--bento-card-bg);
+      padding: 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--bento-text-primary);
+      border-left: 4px solid var(--bento-premium-btn);
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quiz-option-item {
+      background-color: var(--bento-card-white);
+      border: 1px solid var(--bento-card-border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quiz-option-item.selected {
+      background-color: var(--bento-premium-bg);
+      border-color: var(--bento-premium-btn);
+      color: var(--bento-premium-text);
+      font-weight: bold;
+    }
+
+    .quiz-option-item.correct {
+      background-color: #D4EDDA;
+      border-color: #28A745;
+      color: #155724;
+      font-weight: bold;
+    }
+
+    .quiz-option-item.incorrect {
+      background-color: #F8D7DA;
+      border-color: #DC3545;
+      color: #721C24;
+      font-weight: bold;
+    }
+
+    .quiz-explanation {
+      display: none;
+      background-color: #FFF3E0;
+      border-left: 4px solid #E65100;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--bento-text-primary);
+    }
+
+    .quiz-submit-btn {
+      background-color: var(--bento-premium-btn);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 10px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .quiz-submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Bottom Navigation Simulation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background-color: var(--bento-card-white);
+      border-top: 1px solid var(--bento-card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 999;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: var(--bento-text-secondary);
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .nav-item.active {
+      color: var(--bento-premium-btn);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+    }
+
+    /* Modal / File picker Simulation */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0,0,0,0.4);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background-color: white;
+      border-radius: 24px;
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+      animation: slideUp 0.3s ease;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 11px;
+      color: var(--bento-text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .file-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background-color: var(--bento-bg);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .file-option:hover {
+      background-color: var(--bento-card-bg);
+    }
+
+    .file-option-icon {
+      font-size: 20px;
+      color: var(--bento-premium-btn);
+    }
+
+    .file-option-meta h5 {
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .file-option-meta p {
+      font-size: 10px;
+      color: var(--bento-text-secondary);
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--bento-text-secondary);
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    /* Keyframe Animations */
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(103, 80, 164, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(103, 80, 164, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(103, 80, 164, 0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Offline Warning Indicator -->
+  <div class="offline-indicator" id="offline-indicator">
+    📴 Operating offline. You can still review flashcards, solve the quiz, and access your local Study Vault seamlessly!
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Chrome Native Install Prompt Banner -->
+    <div class="install-banner" id="pwa-install-banner">
+      <div class="install-banner-content">
+        <div class="install-icon-wrapper">🧞</div>
+        <div class="install-text">
+          <h3>Install StudyGenie AI</h3>
+          <p>Add StudyGenie directly to your screen for fast, offline-first access!</p>
+        </div>
+      </div>
+      <button class="install-btn" id="pwa-install-btn">Install App</button>
+    </div>
+
+    <!-- MAIN PWA HEADER -->
+    <header>
+      <div class="header-title">
+        <h1>StudyGenie AI Chat</h1>
+        <p id="powered-by-tag">Powered by local sandbox model</p>
+      </div>
+      <div style="font-size: 24px; cursor: pointer;" onclick="resetProgress()">🔄</div>
+    </header>
+
+    <!-- BENTO GRID SYSTEM -->
+    <div class="bento-grid">
+      
+      <!-- Profile & Streak Card (col-4) -->
+      <div class="bento-card col-4 profile-card">
+        <div class="profile-info">
+          <div class="profile-avatar">JD</div>
+          <div class="profile-details">
+            <h2>Jane Doe</h2>
+            <p>Active Student Level 4</p>
+          </div>
+        </div>
+
+        <div class="xp-bar-container">
+          <div class="xp-text">
+            <span>320 / 1000 XP</span>
+            <span style="font-weight: bold; color: var(--bento-premium-btn);">Next Level</span>
+          </div>
+          <div class="xp-track">
+            <div class="xp-progress" id="xp-progress"></div>
+          </div>
+        </div>
+
+        <!-- Weekly Streak Logs -->
+        <div class="streak-section">
+          <div class="streak-header">
+            <span style="display:flex; align-items:center; gap:4px;">⚡ Streak Tracker</span>
+            <span style="color: var(--bento-premium-btn);" id="streak-count-text">3 Days</span>
+          </div>
+          <p style="font-size: 10px; color: var(--bento-text-secondary); line-height: 1.3;">
+            Complete a study activity or tap check-in every day to claim multipliers.
+          </p>
+          <div class="streak-days-row">
+            <div class="streak-day-item">
+              <div class="streak-bubble claimed">⚡</div>
+              <span class="streak-day-label">Mon</span>
+            </div>
+            <div class="streak-day-item">
+              <div class="streak-bubble claimed">⚡</div>
+              <span class="streak-day-label">Tue</span>
+            </div>
+            <div class="streak-day-item" onclick="claimStreakToday()">
+              <div class="streak-bubble interactive-active" id="wed-bubble">W</div>
+              <span class="streak-day-label">Wed</span>
+            </div>
+            <div class="streak-day-item">
+              <div class="streak-bubble">T</div>
+              <span class="streak-day-label">Thu</span>
+            </div>
+            <div class="streak-day-item">
+              <div class="streak-bubble">F</div>
+              <span class="streak-day-label">Fri</span>
+            </div>
+            <div class="streak-day-item">
+              <div class="streak-bubble">S</div>
+              <span class="streak-day-label">Sat</span>
+            </div>
+            <div class="streak-day-item">
+              <div class="streak-bubble">S</div>
+              <span class="streak-day-label">Sun</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- StudyGenie AI Chat (col-8) -->
+      <div class="bento-card col-8">
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <!-- Messages populating here -->
+            <div class="message-row ai">
+              <div class="msg-avatar">🧞</div>
+              <div class="msg-bubble">
+                Hello Jane! I've loaded your bento study vault. What machine learning concept are we conquering today?
+              </div>
+            </div>
+          </div>
+
+          <!-- Thinking dots -->
+          <div class="thinking-row" id="thinking-indicator">
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <span style="margin-left: 6px;">Genie is thinking...</span>
+          </div>
+
+          <div class="suggestions-row" id="suggestions-row">
+            <div class="suggestion-tag" onclick="sendSuggested('Explain Gradient Descent simply')">Explain Gradient Descent</div>
+            <div class="suggestion-tag" onclick="sendSuggested('Give me a 5-step Neural Network roadmap')">5-step NN roadmap</div>
+            <div class="suggestion-tag" onclick="sendSuggested('How do I manage study stress?')">Manage study stress</div>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" class="chat-input" id="chat-input-field" placeholder="Ask anything..." onkeydown="if(event.key==='Enter') sendUserMessage()">
+            <button class="chat-send-btn" onclick="sendUserMessage()">🚀</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive 3D Flashcards (col-6) -->
+      <div class="bento-card col-6">
+        <h3 style="font-size:15px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:4px;">✨ AI Flashcard Deck</h3>
+        
+        <div class="flashcard-wrapper" onclick="flipCard()">
+          <div class="flashcard-inner" id="flashcard-inner">
+            <div class="flashcard-face flashcard-front">
+              <div class="flashcard-indicator">QUESTION:</div>
+              <div class="flashcard-text" id="card-front-text">What does 'Gradient Descent' minimize?</div>
+              <div style="font-size:11px; color: var(--bento-text-secondary); margin-top:20px; font-style:italic;">Tap to flip</div>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <div class="flashcard-indicator">ANSWER:</div>
+              <div class="flashcard-text" id="card-back-text">The Cost (or Loss) Function, adjusting model parameters to find the global minimum.</div>
+              <div style="font-size:11px; color: var(--bento-premium-btn); margin-top:20px; font-style:italic;">Tap to flip back</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flashcard-controls">
+          <button class="flashcard-btn" onclick="prevCard()">👈 Previous</button>
+          <span class="flashcard-counter" id="card-counter-text">Card 1 of 3</span>
+          <button class="flashcard-btn" onclick="nextCard()">Next 👉</button>
+        </div>
+      </div>
+
+      <!-- Bento Vault File Tracker (col-6) -->
+      <div class="bento-card col-6">
+        <h3 style="font-size:15px; font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:4px;">📁 Study Vault</h3>
+        <p style="font-size:10px; color: var(--bento-text-secondary); margin-bottom:12px;">Digitized notes indexed for AI parsing:</p>
+
+        <div class="vault-container">
+          <div class="vault-search-row">
+            <input type="text" class="vault-search" id="vault-search-input" placeholder="Search files..." oninput="filterVault()">
+            <button class="upload-btn-trigger" onclick="openFilePicker()">📤 Upload</button>
+          </div>
+
+          <!-- Processing Progress Bar -->
+          <div class="progress-box" id="upload-progress-box">
+            <div class="progress-title-row">
+              <span id="uploading-file-name">Analyzing document...</span>
+              <span id="upload-percent">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-bar" id="upload-progress-bar"></div>
+            </div>
+          </div>
+
+          <div class="vault-list" id="vault-list-container">
+            <!-- Items generated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Quiz Box (col-12) -->
+      <div class="bento-card col-12 quiz-container">
+        <h3 style="font-size:15px; font-weight:bold; display:flex; align-items:center; gap:4px;">🏆 Genie Study Quiz</h3>
+        <div class="quiz-question-box">
+          What algorithm is used to compute gradients efficiently in deep neural networks?
+        </div>
+        <div class="quiz-options">
+          <div class="quiz-option-item" onclick="selectQuiz(this, 0, false)">
+            <span>A) Forward Propagation</span>
+            <span class="status-icon"></span>
+          </div>
+          <div class="quiz-option-item" onclick="selectQuiz(this, 1, true)">
+            <span>B) Backpropagation</span>
+            <span class="status-icon"></span>
+          </div>
+          <div class="quiz-option-item" onclick="selectQuiz(this, 2, false)">
+            <span>C) Stochastic Optimization</span>
+            <span class="status-icon"></span>
+          </div>
+        </div>
+        <div class="quiz-explanation" id="quiz-explanation-box">
+          <strong>Correct!</strong> Backpropagation uses the Calculus chain rule to compute gradients of the loss function with respect to weights, passing backward through network layers.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Simulated File Upload Modal -->
+  <div class="modal-overlay" id="file-picker-modal">
+    <div class="modal-box">
+      <div class="modal-title">Select Document to Upload</div>
+      <div class="modal-desc">Select a document file to parse and index into your local Study Vault database:</div>
+      
+      <div class="file-option" onclick="selectUploadFile('Machine_Learning_A1.pdf', 'PDF')">
+        <div class="file-option-icon">📄</div>
+        <div class="file-option-meta">
+          <h5>Machine_Learning_A1.pdf</h5>
+          <p>PDF Document File</p>
+        </div>
+      </div>
+
+      <div class="file-option" onclick="selectUploadFile('Backpropagation_Calculus.docx', 'DOCX')">
+        <div class="file-option-icon">📄</div>
+        <div class="file-option-meta">
+          <h5>Backpropagation_Calculus.docx</h5>
+          <p>DOCX Document File</p>
+        </div>
+      </div>
+
+      <div class="file-option" onclick="selectUploadFile('Kotlin_Flows_Reference.txt', 'TXT')">
+        <div class="file-option-icon">📄</div>
+        <div class="file-option-meta">
+          <h5>Kotlin_Flows_Reference.txt</h5>
+          <p>TXT Document File</p>
+        </div>
+      </div>
+
+      <button class="modal-close-btn" onclick="closeFilePicker()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Android style Navigation Bar (fixed bottom) -->
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active">
+      <span class="nav-icon">💬</span>
+      <span>Chat</span>
+    </a>
+    <a href="#" class="nav-item" onclick="scrollToQuiz()">
+      <span class="nav-icon">🏆</span>
+      <span>Quiz</span>
+    </a>
+    <a href="#" class="nav-item" onclick="alert('Student Analytics Sync is Active!')">
+      <span class="nav-icon">📈</span>
+      <span>Progress</span>
+    </a>
+  </nav>
+
+  <!-- PWA Logic and Interactive Operations Script -->
+  <script>
+    // --- SERVICE WORKER REGISTRATION ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((reg) => {
+            console.log('Service Worker registered successfully!', reg.scope);
+          })
+          .catch((err) => {
+            console.error('Service Worker registration failed:', err);
+          });
+      });
+    }
+
+    // --- CHROME INSTALLATION PROMPT HANDLER ---
+    let deferredPrompt;
+    const installBanner = document.getElementById('pwa-install-banner');
+    const installBtn = document.getElementById('pwa-install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Show our beautiful custom installation banner
+      installBanner.style.display = 'flex';
+    });
+
+    installBtn.addEventListener('click', () => {
+      if (!deferredPrompt) return;
+      // Show the native browser install prompt
+      deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the StudyGenie installation prompt');
+        } else {
+          console.log('User dismissed the StudyGenie installation prompt');
+        }
+        deferredPrompt = null;
+        installBanner.style.display = 'none';
+      });
+    });
+
+    // --- OFFLINE CHECKER ---
+    function updateOnlineStatus() {
+      const offlineIndicator = document.getElementById('offline-indicator');
+      if (navigator.onLine) {
+        offlineIndicator.style.display = 'none';
+      } else {
+        offlineIndicator.style.display = 'block';
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus(); // Initial run
+
+    // Check if API keys are present (done dynamically from server on load)
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(config => {
+        const poweredTag = document.getElementById('powered-by-tag');
+        if (config.hasApiKey) {
+          poweredTag.textContent = 'Powered by Gemini 3.5 Flash';
+          poweredTag.style.color = 'var(--bento-premium-btn)';
+        } else {
+          poweredTag.textContent = 'StudyGenie AI (Sandbox Prototype Mode)';
+          poweredTag.style.color = '#7c2d12';
+        }
+      }).catch(() => {
+        // Fallback if offline
+        document.getElementById('powered-by-tag').textContent = 'StudyGenie (Offline Mode)';
+      });
+
+    // --- INTERACTIVE SYSTEM STATES & LOGIC ---
+    let streakCount = 3;
+    let streakClaimed = false;
+    let xpPercent = 48;
+
+    function claimStreakToday() {
+      if (streakClaimed) return;
+      
+      streakClaimed = true;
+      streakCount += 1;
+      xpPercent = Math.min(xpPercent + 15, 100);
+      
+      // Update UI
+      document.getElementById('streak-count-text').textContent = streakCount + ' Days';
+      document.getElementById('xp-progress').style.width = xpPercent + '%';
+      
+      const wedBubble = document.getElementById('wed-bubble');
+      wedBubble.classList.remove('interactive-active');
+      wedBubble.classList.add('claimed');
+      wedBubble.textContent = '⚡';
+      
+      alert('🌟 Daily Streak Claimed! Added 150 XP to your Student Profile!');
+    }
+
+    // --- FLASHCARDS LOGIC ---
+    const flashcards = [
+      { front: "What does 'Gradient Descent' minimize?", back: "The Cost (or Loss) Function, adjusting model parameters to find the global minimum." },
+      { front: "What is the key benefit of K-Fold Cross-Validation?", back: "It guarantees every sample is used for both training and validation, reducing variance." },
+      { front: "Define 'Overfitting' in simple terms.", back: "When a model learns the training noise too well, performing poorly on unseen data." }
+    ];
+    let cardIdx = 0;
+
+    function updateCardUI() {
+      document.getElementById('card-front-text').textContent = flashcards[cardIdx].front;
+      document.getElementById('card-back-text').textContent = flashcards[cardIdx].back;
+      document.getElementById('card-counter-text').textContent = `Card ${cardIdx + 1} of ${flashcards.length}`;
+      document.getElementById('flashcard-inner').classList.remove('flipped');
+    }
+
+    function flipCard() {
+      document.getElementById('flashcard-inner').classList.toggle('flipped');
+    }
+
+    function nextCard() {
+      event.stopPropagation();
+      cardIdx = (cardIdx + 1) % flashcards.length;
+      updateCardUI();
+    }
+
+    function prevCard() {
+      event.stopPropagation();
+      cardIdx = (cardIdx - 1 + flashcards.length) % flashcards.length;
+      updateCardUI();
+    }
+
+    // --- STUDY VAULT LOGIC ---
+    let vaultItems = [
+      { name: "Machine_Learning_A1.pdf", type: "PDF", date: "Just now" },
+      { name: "Backpropagation_Calculus.docx", type: "DOCX", date: "2 hrs ago" },
+      { name: "Kotlin_Flows_Reference.txt", type: "TXT", date: "Yesterday" }
+    ];
+
+    function renderVault() {
+      const container = document.getElementById('vault-list-container');
+      container.innerHTML = '';
+      
+      vaultItems.forEach((item, index) => {
+        container.innerHTML += `
+          <div class="vault-item">
+            <div class="vault-item-meta">
+              <span class="vault-item-icon">📄</span>
+              <div class="vault-item-info">
+                <h4>${item.name}</h4>
+                <p>${item.type} Document File • ${item.date}</p>
+              </div>
+            </div>
+            <button class="vault-delete-btn" onclick="deleteVaultItem(${index})">🗑️</button>
+          </div>
+        `;
+      });
+    }
+
+    function deleteVaultItem(index) {
+      vaultItems.splice(index, 1);
+      renderVault();
+    }
+
+    function filterVault() {
+      const query = document.getElementById('vault-search-input').value.toLowerCase();
+      const items = document.querySelectorAll('.vault-item');
+      items.forEach(el => {
+        const name = el.querySelector('h4').textContent.toLowerCase();
+        if (name.includes(query)) {
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    function openFilePicker() {
+      document.getElementById('file-picker-modal').style.display = 'flex';
+    }
+
+    function closeFilePicker() {
+      document.getElementById('file-picker-modal').style.display = 'none';
+    }
+
+    function selectUploadFile(fileName, fileType) {
+      closeFilePicker();
+      
+      const progressBox = document.getElementById('upload-progress-box');
+      const progressBar = document.getElementById('upload-progress-bar');
+      const progressPercent = document.getElementById('upload-percent');
+      document.getElementById('uploading-file-name').textContent = `Analyzing & Indexing ${fileName}...`;
+      
+      progressBox.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        progressBar.style.width = progress + '%';
+        progressPercent.textContent = progress + '%';
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            progressBox.style.display = 'none';
+            // Add item to local vault list
+            vaultItems.unshift({ name: fileName, type: fileType, date: "Just now" });
+            renderVault();
+            alert(`✅ ${fileName} successfully parsed and secure-indexed into Study Vault!`);
+          }, 300);
+        }
+      }, 100);
+    }
+
+    // --- QUIZ LOGIC ---
+    function selectQuiz(element, index, isCorrect) {
+      // Disable selecting multiple once clicked
+      const options = document.querySelectorAll('.quiz-option-item');
+      options.forEach(opt => {
+        opt.style.pointerEvents = 'none';
+      });
+
+      if (isCorrect) {
+        element.classList.add('correct');
+        element.querySelector('.status-icon').textContent = '✅';
+        document.getElementById('quiz-explanation-box').style.display = 'block';
+        xpPercent = Math.min(xpPercent + 10, 100);
+        document.getElementById('xp-progress').style.width = xpPercent + '%';
+      } else {
+        element.classList.add('incorrect');
+        element.querySelector('.status-icon').textContent = '❌';
+        // Highlight correct option too
+        options[1].classList.add('correct');
+        options[1].querySelector('.status-icon').textContent = '✅';
+        document.getElementById('quiz-explanation-box').style.display = 'block';
+      }
+    }
+
+    function scrollToQuiz() {
+      document.querySelector('.quiz-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetProgress() {
+      streakCount = 3;
+      streakClaimed = false;
+      xpPercent = 48;
+      document.getElementById('streak-count-text').textContent = streakCount + ' Days';
+      document.getElementById('xp-progress').style.width = xpPercent + '%';
+      const wedBubble = document.getElementById('wed-bubble');
+      wedBubble.className = 'streak-bubble interactive-active';
+      wedBubble.textContent = 'W';
+      
+      const options = document.querySelectorAll('.quiz-option-item');
+      options.forEach(opt => {
+        opt.className = 'quiz-option-item';
+        opt.style.pointerEvents = 'auto';
+        opt.querySelector('.status-icon').textContent = '';
+      });
+      document.getElementById('quiz-explanation-box').style.display = 'none';
+      
+      vaultItems = [
+        { name: "Machine_Learning_A1.pdf", type: "PDF", date: "Just now" },
+        { name: "Backpropagation_Calculus.docx", type: "DOCX", date: "2 hrs ago" },
+        { name: "Kotlin_Flows_Reference.txt", type: "TXT", date: "Yesterday" }
+      ];
+      renderVault();
+
+      document.getElementById('chat-messages').innerHTML = `
+        <div class="message-row ai">
+          <div class="msg-avatar">🧞</div>
+          <div class="msg-bubble">
+            Hello Jane! I've loaded your bento study vault. What machine learning concept are we conquering today?
+          </div>
+        </div>
+      `;
+      alert('🔄 Progress Reset Completed!');
+    }
+
+    // --- AI CHAT SYSTEM ENGINE ---
+    const chatMessages = document.getElementById('chat-messages');
+
+    function appendMessage(sender, text) {
+      const row = document.createElement('div');
+      row.className = `message-row ${sender}`;
+      row.innerHTML = `
+        <div class="msg-avatar">${sender === 'user' ? 'JD' : '🧞'}</div>
+        <div class="msg-bubble">${text}</div>
+      `;
+      chatMessages.appendChild(row);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendUserMessage() {
+      const input = document.getElementById('chat-input-field');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      input.value = '';
+
+      processAiResponse(text);
+    }
+
+    function sendSuggested(text) {
+      appendMessage('user', text);
+      processAiResponse(text);
+    }
+
+    function processAiResponse(promptText) {
+      const indicator = document.getElementById('thinking-indicator');
+      indicator.style.display = 'flex';
+
+      // Call API server
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText })
+      })
+      .then(res => res.json())
+      .then(data => {
+        indicator.style.display = 'none';
+        appendMessage('ai', data.response);
+      })
+      .catch(() => {
+        // Fallback offline router logic
+        setTimeout(() => {
+          indicator.style.display = 'none';
+          const lower = promptText.toLowerCase();
+          let fallbackText = "I parsed your query but couldn't find a direct connection to your index vault. Try asking about 'Gradient Descent' or 'Neural Networks'!";
+
+          if (lower.includes('gradient')) {
+            fallbackText = "📊 <strong>Gradient Descent</strong> is an optimization algorithm that iteratively reduces cost by taking steps proportional to the negative gradient. Think of it like walking down a mountain at night: you feel the steepest slope under your feet and take a step in that direction until you reach the valley bottom!";
+          } else if (lower.includes('network') || lower.includes('neural')) {
+            fallbackText = "🧠 <strong>Neural Networks Roadmap</strong>:<br>1. Understand Linear Regression & Perceptrons.<br>2. Study Activation Functions (ReLU, Sigmoid).<br>3. Master Backpropagation calculus (chain rule).<br>4. Build simple MLPs in Python/Kotlin.<br>5. Explore deep structures like CNNs or Transformer weights.";
+          } else if (lower.includes('stress') || lower.includes('manage')) {
+            fallbackText = "🧘 <strong>Managing study stress</strong> is key to neuroplastic retention. Practice the 4-7-8 breathing method: inhale for 4 seconds, hold for 7, and exhale completely for 8. Space your StudyGenie cards into 25-minute Pomodoro clusters with green tea breaks.";
+          } else if (lower.includes('hello') || lower.includes('hi')) {
+            fallbackText = "Hello Jane! I'm ready. Let me know if you want me to explain backpropagation, give you study guides, or load textbook indices!";
+          }
+
+          appendMessage('ai', fallbackText);
+        }, 1200);
+      });
+    }
+
+    // Initialize Vault rendering
+    renderVault();
+  </script>
+</body>
+</html>

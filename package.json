@@ -1,0 +1,10 @@
+{
+  "name": "study-genie",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Android project builds via Gradle'",
+    "dev": "node server.js",
+    "start": "node server.js",
+    "lint": "echo 'No web linter needed'"
+  }
+}
